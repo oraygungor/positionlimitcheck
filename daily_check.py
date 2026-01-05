@@ -209,5 +209,23 @@ def generate_diff():
         shutil.move(LATEST_FILE, PREVIOUS_FILE)
         print(f"Updated {PREVIOUS_FILE}.")
 
+def update_report_index():
+    print("Updating report index...")
+    # Klasördeki json dosyalarını bul
+    files = [f for f in os.listdir('.') if f.startswith('previousVSlatest-') and f.endswith('.json')]
+    
+    # Dosyaları tarihe göre sırala (En yeniden eskiye)
+    try:
+        files.sort(key=lambda x: datetime.strptime(x.replace('previousVSlatest-', '').replace('.json', ''), "%d.%m.%Y"), reverse=True)
+    except Exception as e:
+        print(f"Sort warning: {e}")
+        files.sort(reverse=True)
+
+    # report_list.json dosyasını oluştur
+    with open('report_list.json', 'w', encoding='utf-8') as f:
+        json.dump(files, f, indent=4)
+    print("report_list.json created.")
+
 if __name__ == "__main__":
-    generate_diff()
+    generate_diff()        # 1. Excel'i indir ve karşılaştır
+    update_report_index()  # 2. Rapor listesini güncelle (BU SATIR ŞART)
