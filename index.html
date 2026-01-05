@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESMA Position Limits - Değişiklik Raporu</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .sidebar { height: 100vh; overflow-y: auto; border-right: 1px solid #ddd; background: white; }
+        .file-item { cursor: pointer; padding: 10px; border-bottom: 1px solid #eee; transition: 0.2s; }
+        .file-item:hover { background-color: #e9ecef; }
+        .file-item.active { background-color: #0d6efd; color: white; font-weight: bold; }
+        
+        /* Diff Renklendirmeleri */
+        .diff-cell-updated { background-color: #fff3cd; color: #856404; font-weight: bold; border: 2px solid #ffecb5; }
+        .diff-cell-added { background-color: #d1e7dd; color: #0f5132; }
+        .diff-cell-deleted { background-color: #f8d7da; color: #842029; }
+        
+        .change-arrow { color: #dc3545; font-weight: bold; padding: 0 5px; }
+        .new-val { color: #198754; }
+        
+        .card-header { font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        .badge-count { font-size: 0.9em; }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3 col-lg-2 sidebar p-0">
+            <div class="p-3 bg-dark text-white">
+                <h5 class="m-0">Rapor Geçmişi</h5>
+                <small>Otomatik Günlük Kontrol</small>
+            </div>
+            <div id="file-list" class="list-group list-group-flush">
+                <div class="text-center p-3 text-muted">Yükleniyor...</div>
+            </div>
+        </div>
+
+        <div class="col-md-9 col-lg-10 p-4">
+            <div id="dashboard-content" style="display: none;">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 id="report-date">Tarih Seçiniz</h2>
+                    <div>
+                        <span class="badge bg-warning text-dark p-2" id="count-updates">Updates: 0</span>
+                        <span class="badge bg-success p-2" id="count-adds">Additions: 0</span>
+                        <span class="badge bg-danger p-2" id="count-dels">Deletions: 0</span>
+                    </div>
+                </div>
+
+                <ul class="nav nav-tabs" id="myTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="updates-tab" data-bs-toggle="tab" data-bs-target="#updates-pane" type="button">🛠 Güncellemeler (Updates)</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="added-tab" data-bs-toggle="tab" data-bs-target="#added-pane" type="button">➕ Yeni Eklenenler</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="deleted-tab" data-bs-toggle="tab" data-bs-target="#deleted-pane" type="button">➖ Silinenler</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content mt-3" id="myTabContent">
+                    <div class="tab-pane fade show active" id="updates-pane">
+                        <div class="alert alert-info">Aşağıdaki satırlarda, sadece <b>sarı ile işaretli</b> hücreler değişmiştir.</div>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover shadow-sm bg-white" id="table-updates">
+                                <thead class="table-light"><tr><th>Kimlik (Ürün)</th><th>Değişen Alanlar</th></tr></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="added-pane">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm table-hover shadow-sm bg-white" id="table-adds">
+                                <thead class="table-light"></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="deleted-pane">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm table-hover shadow-sm bg-white" id="table-dels">
+                                <thead class="table-light"></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="welcome-screen" class="text-center mt-5">
+                <h3 class="text-muted">← Soldan bir tarih seçerek detayları görüntüleyin.</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- AYARLAR: BURAYI KENDİ REPO BİLGİLERİNLE DOLDUR ---
+    const CONFIG = {
+        user: 'kullanici_adin',    // Örn: 'ahmet'
+        repo: 'repo_adin',         // Örn: 'esma-checker'
+        branch: 'main'             // Genelde 'main' veya 'master'
+    };
+
+    const API_URL = `https://api.github.com/repos/${CONFIG.user}/${CONFIG.repo}/contents/`;
+
+    // 1. Dosya Listesini Getir
+    async function fetchFileList() {
+        try {
+            const response = await fetch(API_URL);
+            const data = await response.json();
+            
+            // Sadece 'previousVSlatest-*.json' dosyalarını filtrele
+            const jsonFiles = data
+                .filter(file => file.name.startsWith('previousVSlatest-') && file.name.endsWith('.json'))
+                .sort((a, b) => b.name.localeCompare(a.name)); // En yeni tarih en üstte
+
+            const listContainer = document.getElementById('file-list');
+            listContainer.innerHTML = '';
+
+            if (jsonFiles.length === 0) {
+                listContainer.innerHTML = '<div class="p-3 text-danger">Henüz rapor dosyası bulunamadı.</div>';
+                return;
+            }
+
+            jsonFiles.forEach(file => {
+                const dateStr = file.name.replace('previousVSlatest-', '').replace('.json', '');
+                const item = document.createElement('div');
+                item.className = 'file-item';
+                item.innerText = `📅 ${dateStr}`;
+                item.onclick = () => loadReport(file.download_url, item, dateStr);
+                listContainer.appendChild(item);
+            });
+        } catch (error) {
+            console.error(error);
+            document.getElementById('file-list').innerHTML = '<div class="p-3 text-danger">GitHub API Hatası! Ayarları kontrol et.</div>';
+        }
+    }
+
+    // 2. Seçilen Raporu Yükle ve Göster
+    async function loadReport(url, element, dateStr) {
+        // Aktif sınıfını güncelle
+        document.querySelectorAll('.file-item').forEach(el => el.classList.remove('active'));
+        element.classList.add('active');
+
+        // Ekranı hazırla
+        document.getElementById('welcome-screen').style.display = 'none';
+        document.getElementById('dashboard-content').style.display = 'block';
+        document.getElementById('report-date').innerText = `Rapor Tarihi: ${dateStr}`;
+        
+        // JSON'ı indir
+        const response = await fetch(url);
+        const data = await response.json();
+
+        // Rozetleri Güncelle
+        document.getElementById('count-updates').innerText = `Updates: ${data.summary.updates_count || 0}`;
+        document.getElementById('count-adds').innerText = `Additions: ${data.summary.additions_count}`;
+        document.getElementById('count-dels').innerText = `Deletions: ${data.summary.deletions_count}`;
+
+        // Tabloları Doldur
+        renderUpdatesTable(data.updates || []);
+        renderSimpleTable(data.additions, 'table-adds', 'diff-cell-added');
+        renderSimpleTable(data.deletions, 'table-dels', 'diff-cell-deleted');
+    }
+
+    // 3. UPDATES Tablosunu Özel Çiz (Görsel Karşılaştırma)
+    function renderUpdatesTable(updates) {
+        const tbody = document.querySelector('#table-updates tbody');
+        tbody.innerHTML = '';
+
+        if (updates.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="2" class="text-center text-muted">Bu tarihte güncelleme yok.</td></tr>';
+            return;
+        }
+
+        updates.forEach(item => {
+            const tr = document.createElement('tr');
+            
+            // Kimlik Kolonu (Hangi ürün?)
+            let identityHtml = `
+                <strong>${item._Identity_MIC || '-'}</strong><br>
+                <small>${item._Identity_Instrument || 'Bilinmeyen Ürün'}</small><br>
+                <span class="badge bg-secondary">${item._Sheet || 'Sheet'}</span>
+            `;
+
+            // Değişiklikleri Formatla
+            let changesHtml = '<ul class="list-unstyled mb-0">';
+            for (const [key, val] of Object.entries(item)) {
+                if (key.startsWith('_')) continue; // Metadata'yı atla
+
+                // "500 -> 600" formatını parçala
+                if (val.includes(' -> ')) {
+                    const parts = val.split(' -> ');
+                    changesHtml += `
+                        <li class="mb-2">
+                            <span class="text-muted small">${key}:</span> <br>
+                            <span class="text-decoration-line-through text-danger">${parts[0]}</span>
+                            <span class="change-arrow">→</span>
+                            <span class="diff-cell-updated px-2 rounded">${parts[1]}</span>
+                        </li>`;
+                } else {
+                    changesHtml += `<li>${key}: ${val}</li>`;
+                }
+            }
+            changesHtml += '</ul>';
+
+            tr.innerHTML = `
+                <td style="width: 30%; background:#f9f9f9;">${identityHtml}</td>
+                <td>${changesHtml}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // 4. Standart Ekleme/Silme Tablolarını Çiz
+    function renderSimpleTable(dataList, tableId, rowClass) {
+        const table = document.getElementById(tableId);
+        const thead = table.querySelector('thead');
+        const tbody = table.querySelector('tbody');
+        
+        thead.innerHTML = '';
+        tbody.innerHTML = '';
+
+        if (!dataList || dataList.length === 0) {
+            tbody.innerHTML = `<tr><td class="text-center text-muted">Veri yok.</td></tr>`;
+            return;
+        }
+
+        // Başlıkları al (tüm key'lerin birleşimi)
+        const allKeys = new Set();
+        dataList.forEach(item => Object.keys(item).forEach(k => {
+            if(!k.startsWith('_')) allKeys.add(k);
+        }));
+        const headers = Array.from(allKeys).sort();
+
+        // Header Çiz
+        let headRow = '<tr>';
+        headers.forEach(h => headRow += `<th>${h}</th>`);
+        headRow += '</tr>';
+        thead.innerHTML = headRow;
+
+        // Body Çiz
+        dataList.forEach(item => {
+            let row = `<tr class="${rowClass}">`;
+            headers.forEach(key => {
+                row += `<td>${item[key] || ''}</td>`;
+            });
+            row += '</tr>';
+            tbody.appendChild(row);
+        });
+    }
+
+    // Sayfa açılınca listeyi çek
+    fetchFileList();
+
+    // Bootstrap Tab Tetikleyicileri
+    const triggerTabList = document.querySelectorAll('#myTab button')
+    triggerTabList.forEach(triggerEl => {
+        const tabTrigger = new bootstrap.Tab(triggerEl)
+        triggerEl.addEventListener('click', event => {
+            event.preventDefault()
+            tabTrigger.show()
+        })
+    })
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
