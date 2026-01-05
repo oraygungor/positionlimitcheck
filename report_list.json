@@ -16,5 +16,17 @@
         "region": "UK",
         "type": "UPDATE",
         "message": "UK limitlerinde değişiklik tespit edildi. (Satır: 644 -> 644)"
+    },
+    {
+        "date": "2026-01-05 13:14:49",
+        "region": "UK",
+        "type": "UPDATE",
+        "message": "[CPLR WEBSITE EXCEL FOR PUBLISHI] Satır 31, 'Spot month single limit#': 1500 -> 2500<br>[CPLR WEBSITE EXCEL FOR PUBLISHI] Satır 64, 'Spot month single limit#': 1000 -> 2500<br>[CPLR WEBSITE EXCEL FOR PUBLISHI] Satır 145, 'Other month limit#': Aggregated with Principal -> TBA"
+    },
+    {
+        "date": "2026-01-05 13:14:49",
+        "region": "EU",
+        "type": "UPDATE",
+        "message": "[Position Limits] Satır 6, 'Unnamed: 13': 50000 -> 120000"
     }
 ]
