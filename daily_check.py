@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import shutil
 import json
+import hashlib
 from datetime import datetime
 from collections import Counter
 
@@ -11,18 +12,24 @@ URL = "https://www.esma.europa.eu/sites/default/files/position_limits_publicatio
 LATEST_FILE = "positionlimit-latest.xlsx"
 PREVIOUS_FILE = "positionlimit-previous.xlsx"
 
+def get_file_hash(filepath):
+    """Dosyanın SHA256 parmak izini (hash) hesaplar."""
+    sha256_hash = hashlib.sha256()
+    with open(filepath, "rb") as f:
+        # Dosyayı parça parça oku (Büyük dosyalar için RAM dostu)
+        for byte_block in iter(lambda: f.read(4096), b""):
+            sha256_hash.update(byte_block)
+    return sha256_hash.hexdigest()
+
 def download_file():
     print(f"Downloading new file from {URL}...")
     try:
         response = requests.get(URL, timeout=60)
         response.raise_for_status()
         
-        # Basit İçerik Kontrolü: İnen şey bir Excel dosyası mı?
-        # Excel dosyaları genellikle 'application/vnd.openxmlformats' veya binary başlar.
-        # En basit kontrol: HTML inip inmediğine bakmak.
         content_type = response.headers.get('Content-Type', '')
         if 'text/html' in content_type:
-            raise ValueError("Indirilen dosya Excel degil, HTML sayfasi (Muhtemelen hata sayfasi).")
+            raise ValueError("Indirilen dosya Excel degil, HTML sayfasi.")
             
         with open(LATEST_FILE, 'wb') as f:
             f.write(response.content)
@@ -33,77 +40,75 @@ def download_file():
         exit(1)
 
 def load_data(filepath):
-    """
-    Excel dosyasını yükler, temizler ve dataframe döndürür.
-    """
     if not os.path.exists(filepath):
         return None
-    
     try:
-        # Tüm verileri 'str' oku, sheet belirtilmezse ilk sheet okunur.
         df = pd.read_excel(filepath, dtype=str, engine='openpyxl')
-        
-        # Boşlukları ve NaN'ları temizle
         df = df.fillna("")
-        # Baştaki/sondaki görünmez boşlukları (trim) temizle
         df = df.apply(lambda x: x.str.strip() if x.dtype == "object" else x)
-        
         return df
     except Exception as e:
         print(f"Error reading Excel file {filepath}: {e}")
-        # Eğer dosya bozuksa scriptin durması daha iyidir
         exit(1)
 
 def generate_diff():
-    # 1. İndir
+    # 1. Yeni dosyayı indir
     download_file()
 
-    # 2. Previous kontrolü
+    # 2. Previous dosya yoksa, yeniyi previous yap ve bitir.
     if not os.path.exists(PREVIOUS_FILE):
-        print("ALERT: No previous file found. Setting current download as previous for the NEXT run.")
+        print("First run detected. Setting current download as previous.")
         shutil.copy(LATEST_FILE, PREVIOUS_FILE)
         return
 
+    # --- ADIM 3: SHA-256 KONTROLÜ (Hızlı Ön Eleme) ---
+    print("Performing SHA-256 binary check...")
+    latest_hash = get_file_hash(LATEST_FILE)
+    previous_hash = get_file_hash(PREVIOUS_FILE)
+
+    if latest_hash == previous_hash:
+        print("SHA-256 MATCH: Files are binary identical.")
+        print("No need to parse Excel. Stopping.")
+        # Dosyalar birebir aynı, işleme gerek yok.
+        if os.path.exists(LATEST_FILE):
+            os.remove(LATEST_FILE)
+        return
+    else:
+        print("SHA-256 MISMATCH: Binary content differs.")
+        print("Starting deep content comparison (Pandas)...")
+        # Hash farklı ama içerik aynı olabilir (Metadata değişmiştir).
+        # O yüzden devam ediyoruz...
+
+    # --- ADIM 4: PANDAS & COUNTER ANALİZİ ---
     print("Loading datasets...")
     df_latest = load_data(LATEST_FILE)
     df_previous = load_data(PREVIOUS_FILE)
 
-    # --- KRİTİK DÜZELTME 1: Kolon Hizalama ---
-    # İki dosyada kolonlar yer değiştirmiş veya yeni kolon gelmiş olabilir.
-    # İkisini de tüm kolonların birleşimine (union) göre genişletiyoruz.
+    # Kolon Hizalama
     all_cols = sorted(set(df_latest.columns) | set(df_previous.columns))
-    
     df_latest = df_latest.reindex(columns=all_cols, fill_value="")
     df_previous = df_previous.reindex(columns=all_cols, fill_value="")
 
-    # --- KRİTİK DÜZELTME 2: Counter ile Multiset Farkı ---
-    # Pandas merge yerine, satırları tuple'a çevirip sayıyoruz.
-    # Bu yöntem duplicate satırları ve kolon kaymalarını %100 doğru yönetir.
-    
-    print("Comparing rows using Counter logic...")
-    # DataFrame -> Numpy -> List of Tuples
+    # Counter ile Satır Karşılaştırma
     latest_rows = [tuple(r) for r in df_latest.to_numpy()]
     prev_rows = [tuple(r) for r in df_previous.to_numpy()]
 
-    # Satırları say (Hangi satırdan kaç tane var?)
     c_latest = Counter(latest_rows)
     c_prev = Counter(prev_rows)
 
-    # Farkları bul (Multiset subtraction)
-    # c_latest - c_prev -> Latest'ta olup Previous'ta olmayanlar (EKLENENLER)
-    # c_prev - c_latest -> Previous'ta olup Latest'ta olmayanlar (SİLİNENLER)
     additions_rows = list((c_latest - c_prev).elements())
     deletions_rows = list((c_prev - c_latest).elements())
 
-    # Tekrar DataFrame'e çevir
     additions_df = pd.DataFrame(additions_rows, columns=all_cols)
     deletions_df = pd.DataFrame(deletions_rows, columns=all_cols)
 
-    # 3. Sonuç Kontrolü
+    # 5. Sonuç
     if deletions_df.empty and additions_df.empty:
-        print("No content changes detected.")
-        if os.path.exists(LATEST_FILE):
-            os.remove(LATEST_FILE)
+        print("Result: Content is identical (Only metadata/timestamps changed).")
+        # İçerik aynı çıktı, ama dosya hash'i farklıydı.
+        # Yine de en son inen dosyayı 'previous' yapalım ki hash'ler güncellensin.
+        shutil.move(LATEST_FILE, PREVIOUS_FILE)
+        print("Updated previous file to match latest metadata.")
     else:
         print(f"CHANGES DETECTED! Additions: {len(additions_df)}, Deletions: {len(deletions_df)}")
         
@@ -125,7 +130,6 @@ def generate_diff():
             json.dump(output_data, f, indent=4, ensure_ascii=False)
             print(f"Diff file created: {json_filename}")
 
-        # Update previous file
         shutil.move(LATEST_FILE, PREVIOUS_FILE)
         print(f"Updated {PREVIOUS_FILE} for the next run.")
 
