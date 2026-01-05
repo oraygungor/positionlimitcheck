@@ -1,0 +1,41 @@
+name: Daily Position Limit Check
+
+on:
+  schedule:
+    # Runs at 08:00 UTC every day
+    - cron: '0 8 * * *'
+  workflow_dispatch: # Allows you to run it manually from the Actions tab for testing
+
+jobs:
+  check-and-update:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write  # Critical: allows the bot to push changes to your repo
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          pip install pandas openpyxl requests
+
+      - name: Run comparison script
+        run: python daily_check.py
+
+      - name: Commit and Push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Add all files (JSONs and the updated .xls/.xlsx)
+          git add .
+          
+          # Commit only if there are changes
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Daily Update: Position Limits Diff" && git push)
