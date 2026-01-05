@@ -1,0 +1,56 @@
+{
+    "date": "05.01.2026",
+    "summary": {
+        "status": "changes_found",
+        "additions_count": 1,
+        "deletions_count": 1
+    },
+    "additions": [
+        {
+            "I. EU Member States": "EBM, OBM",
+            "Unnamed: 1": "XPAR",
+            "Unnamed: 10": "12",
+            "Unnamed: 11": "70000",
+            "Unnamed: 12": "-",
+            "Unnamed: 13": "120000",
+            "Unnamed: 14": "21",
+            "Unnamed: 15": "100000",
+            "Unnamed: 16": "03.06.2023",
+            "Unnamed: 17": "-",
+            "Unnamed: 18": "link",
+            "Unnamed: 2": "AMF",
+            "Unnamed: 3": "Euronext Milling Wheat No. 2",
+            "Unnamed: 4": "Agricultural",
+            "Unnamed: 5": "Grain",
+            "Unnamed: 6": "Milling wheat",
+            "Unnamed: 7": "lots",
+            "Unnamed: 8": "-",
+            "Unnamed: 9": "20000",
+            "_SHEET_SOURCE": "Position Limits"
+        }
+    ],
+    "deletions": [
+        {
+            "I. EU Member States": "EBM, OBM",
+            "Unnamed: 1": "XPAR",
+            "Unnamed: 10": "12",
+            "Unnamed: 11": "70000",
+            "Unnamed: 12": "-",
+            "Unnamed: 13": "50000",
+            "Unnamed: 14": "21",
+            "Unnamed: 15": "100000",
+            "Unnamed: 16": "03.06.2023",
+            "Unnamed: 17": "-",
+            "Unnamed: 18": "link",
+            "Unnamed: 2": "AMF",
+            "Unnamed: 3": "Euronext Milling Wheat No. 2",
+            "Unnamed: 4": "Agricultural",
+            "Unnamed: 5": "Grain",
+            "Unnamed: 6": "Milling wheat",
+            "Unnamed: 7": "lots",
+            "Unnamed: 8": "-",
+            "Unnamed: 9": "20000",
+            "_SHEET_SOURCE": "Position Limits"
+        }
+    ]
+}
