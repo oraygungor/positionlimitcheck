@@ -3,142 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESMA Position Limits</title>
+    <title>Position Limits Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
     <style>
-        body { background-color: #f8f9fa; font-family: sans-serif; }
-        .sidebar { height: 100vh; overflow-y: auto; border-right: 1px solid #ddd; background: white; }
-        .file-item { cursor: pointer; padding: 12px; border-bottom: 1px solid #eee; }
-        .file-item:hover { background-color: #f0f0f0; }
-        .file-item.active { background-color: #0d6efd; color: white; }
-        .diff-updated { background-color: #fff3cd; color: #856404; font-weight: bold; }
-        .diff-added { background-color: #d1e7dd; color: #0f5132; }
-        .diff-deleted { background-color: #f8d7da; color: #842029; }
-        .arrow { color: #dc3545; font-weight: bold; margin: 0 5px; }
+        body { font-family: 'Inter', sans-serif; background-color: #f4f6f9; }
+        .header { background: linear-gradient(135deg, #2c3e50, #4ca1af); color: white; padding: 2rem 0; margin-bottom: 2rem; }
+        .card { border: none; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .nav-tabs .nav-link { color: #555; font-weight: 600; border: none; }
+        .nav-tabs .nav-link.active { color: #0d6efd; border-bottom: 3px solid #0d6efd; background: transparent; }
+        .table-wrapper { max-height: 600px; overflow: auto; font-size: 0.85rem; }
+        .badge-eu { background-color: #0d6efd; }
+        .badge-uk { background-color: #dc3545; }
     </style>
 </head>
 <body>
 
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-md-3 col-lg-2 sidebar p-0">
-            <div class="p-3 bg-dark text-white"><h5>Raporlar</h5></div>
-            <div id="file-list" class="list-group list-group-flush">
-                <div class="p-3 text-muted">Yükleniyor...</div>
-            </div>
-        </div>
+<div class="header text-center">
+    <h1>🌍 Global Position Limits Monitor</h1>
+    <p>Otomatik Takip Sistemi (EU & UK)</p>
+</div>
 
-        <div class="col-md-9 col-lg-10 p-4">
-            <h3 id="report-title">← Soldan tarih seçin</h3>
-            
-            <ul class="nav nav-tabs mt-4" id="tabs">
-                <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-updates">🛠 Updates <span id="badge-upd" class="badge bg-warning text-dark">0</span></button></li>
-                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-adds">➕ Adds <span id="badge-add" class="badge bg-success">0</span></button></li>
-                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-dels">➖ Deletions <span id="badge-del" class="badge bg-danger">0</span></button></li>
-            </ul>
-
-            <div class="tab-content mt-3">
-                <div class="tab-pane fade show active" id="tab-updates"><div class="table-responsive"><table class="table table-bordered bg-white" id="tbl-updates"></table></div></div>
-                <div class="tab-pane fade" id="tab-adds"><div class="table-responsive"><table class="table table-bordered bg-white" id="tbl-adds"></table></div></div>
-                <div class="tab-pane fade" id="tab-dels"><div class="table-responsive"><table class="table table-bordered bg-white" id="tbl-dels"></table></div></div>
+<div class="container-fluid px-5">
+    
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card p-3">
+                <h5 class="mb-3">🔔 Son Güncelleme Kayıtları (Log)</h5>
+                <div style="max-height: 200px; overflow-y: auto;">
+                    <table class="table table-sm table-bordered table-striped" id="logTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 180px;">Tarih</th>
+                                <th style="width: 100px;">Bölge</th>
+                                <th>Mesaj</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="3" class="text-center text-muted">Yükleniyor...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
+
+    <div class="card p-3">
+        <ul class="nav nav-tabs mb-3" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="eu-tab" data-bs-toggle="tab" data-bs-target="#eu-pane" type="button">🇪🇺 EU Limits</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="uk-tab" data-bs-toggle="tab" data-bs-target="#uk-pane" type="button">🇬🇧 UK Limits</button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="myTabContent">
+            <div class="tab-pane fade show active" id="eu-pane" role="tabpanel">
+                <div class="table-wrapper" id="eu-table-container">
+                    <p class="text-center text-muted mt-3">Veri yükleniyor...</p>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="uk-pane" role="tabpanel">
+                <div class="table-wrapper" id="uk-table-container">
+                    <p class="text-center text-muted mt-3">Veri yükleniyor...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // ARTIK CONFIG YOK! DIREKT DOSYA OKUYORUZ.
-    
-    async function init() {
-        const listDiv = document.getElementById('file-list');
-        try {
-            // 1. Python'ın oluşturduğu listeyi çek
-            // Cache sorunu olmasın diye sonuna timestamp ekliyoruz (?t=...)
-            const res = await fetch('report_list.json?t=' + new Date().getTime());
-            
-            if (!res.ok) throw new Error("Dosya listesi (report_list.json) bulunamadı. Python scripti çalıştı mı?");
-            
-            const files = await res.json();
-            
-            listDiv.innerHTML = '';
-            files.forEach(filename => {
-                const dateStr = filename.replace('previousVSlatest-', '').replace('.json', '');
-                const item = document.createElement('div');
-                item.className = 'file-item';
-                item.innerText = `📅 ${dateStr}`;
-                item.onclick = () => loadReport(filename, item, dateStr);
-                listDiv.appendChild(item);
+    // 1. JSON LOG YÜKLEME
+    fetch('report_list.json')
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.querySelector('#logTable tbody');
+            tbody.innerHTML = '';
+            // Listeyi ters çevir (en yeni en üstte)
+            data.reverse().forEach(item => {
+                const badgeClass = item.region === 'EU' ? 'badge-eu' : 'badge-uk';
+                const row = `
+                    <tr>
+                        <td>${item.date}</td>
+                        <td><span class="badge ${badgeClass}">${item.region}</span></td>
+                        <td>${item.message}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
             });
-        } catch (err) {
-            listDiv.innerHTML = `<div class="p-3 text-danger">${err.message}</div>`;
+        })
+        .catch(err => {
+            document.querySelector('#logTable tbody').innerHTML = '<tr><td colspan="3" class="text-danger">Log dosyası (report_list.json) bulunamadı.</td></tr>';
+        });
+
+    // 2. EXCEL DOSYALARINI OKUMA FONKSİYONU
+    async function loadExcel(url, containerId) {
+        try {
+            const response = await fetch(url);
+            const arrayBuffer = await response.arrayBuffer();
+            const workbook = XLSX.read(arrayBuffer, {type: 'array'});
+            
+            // İlk sayfayı al
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            
+            // HTML'e çevir (Bootstrap class'ları ekle)
+            const htmlTable = XLSX.utils.sheet_to_html(worksheet, { id: "table-" + containerId });
+            
+            const container = document.getElementById(containerId);
+            container.innerHTML = htmlTable;
+            
+            // Oluşan tabloya stil ver
+            const table = container.querySelector('table');
+            if(table) {
+                table.classList.add('table', 'table-striped', 'table-hover', 'table-sm');
+                // İlk satırı header yap (SheetJS bazen yapmaz)
+                // Basitlik için olduğu gibi bırakıyoruz, görsel olarak yeterli olacaktır.
+            }
+        } catch (error) {
+            document.getElementById(containerId).innerHTML = `<p class="text-danger">Dosya yüklenemedi: ${url} (Python scripti çalıştırıldı mı?)</p>`;
         }
     }
 
-    async function loadReport(filename, el, dateStr) {
-        document.querySelectorAll('.file-item').forEach(x => x.classList.remove('active'));
-        el.classList.add('active');
-        document.getElementById('report-title').innerText = `Rapor: ${dateStr}`;
+    // Sayfa açılınca Excel'leri çek
+    loadExcel('positionlimit-previous-EU.xlsx', 'eu-table-container');
+    loadExcel('positionlimit-previous-UK.xlsx', 'uk-table-container');
 
-        const res = await fetch(filename);
-        const data = await res.json();
-
-        // Sayıları güncelle
-        document.getElementById('badge-upd').innerText = data.summary.updates_count || 0;
-        document.getElementById('badge-add').innerText = data.summary.additions_count;
-        document.getElementById('badge-del').innerText = data.summary.deletions_count;
-
-        // Tabloları çiz
-        renderUpdates(data.updates || []);
-        renderSimple(data.additions, 'tbl-adds', 'diff-added');
-        renderSimple(data.deletions, 'tbl-dels', 'diff-deleted');
-    }
-
-    function renderUpdates(list) {
-        const tbl = document.getElementById('tbl-updates');
-        tbl.innerHTML = '';
-        if(!list.length) { tbl.innerHTML = '<tr><td class="p-3 text-muted">Değişiklik yok.</td></tr>'; return; }
-
-        list.forEach(item => {
-            let row = '<tr><td style="width:30%">';
-            // Kimlik
-            row += `<strong>${item._Identity_MIC || ''}</strong><br><small>${item._Identity_Instrument || ''}</small>`;
-            row += '</td><td><ul class="list-unstyled mb-0">';
-            
-            // Değerler
-            for(let [k, v] of Object.entries(item)) {
-                if(k.startsWith('_')) continue;
-                if(v.includes && v.includes(' -> ')) {
-                    const [oldV, newV] = v.split(' -> ');
-                    row += `<li><span class="text-muted">${k}:</span> <span class="text-decoration-line-through text-danger">${oldV}</span> <span class="arrow">→</span> <span class="diff-updated px-1 rounded">${newV}</span></li>`;
-                } else {
-                    row += `<li>${k}: ${v}</li>`;
-                }
-            }
-            row += '</ul></td></tr>';
-            tbl.innerHTML += row;
-        });
-    }
-
-    function renderSimple(list, id, cls) {
-        const tbl = document.getElementById(id);
-        tbl.innerHTML = '';
-        if(!list || !list.length) { tbl.innerHTML = '<tr><td class="p-3 text-muted">Veri yok.</td></tr>'; return; }
-
-        // Header
-        const keys = new Set();
-        list.forEach(i => Object.keys(i).forEach(k => !k.startsWith('_') && keys.add(k)));
-        let head = '<thead class="table-light"><tr>' + [...keys].map(k=>`<th>${k}</th>`).join('') + '</tr></thead>';
-        
-        let body = '<tbody>';
-        list.forEach(item => {
-            body += `<tr class="${cls}">` + [...keys].map(k=>`<td>${item[k]||''}</td>`).join('') + '</tr>';
-        });
-        body += '</tbody>';
-        tbl.innerHTML = head + body;
-    }
-
-    init();
 </script>
+
 </body>
 </html>
