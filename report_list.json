@@ -28,5 +28,11 @@
         "region": "EU",
         "type": "UPDATE",
         "message": "[Position Limits] Satır 6, 'Unnamed: 13': 50000 -> 120000"
+    },
+    {
+        "date": "2026-02-12 07:09:59",
+        "region": "EU",
+        "type": "UPDATE",
+        "message": "[Position Limits] Tablo boyutu değişti! (Eski: (17, 19), Yeni: (19, 19))<br>[Position Limits] 2 adet yeni satır eklendi."
     }
 ]
