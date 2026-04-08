@@ -34,5 +34,11 @@
         "region": "EU",
         "type": "UPDATE",
         "message": "[Position Limits] Tablo boyutu değişti! (Eski: (17, 19), Yeni: (19, 19))<br>[Position Limits] 2 adet yeni satır eklendi."
+    },
+    {
+        "date": "2026-04-08 08:53:43",
+        "region": "UK",
+        "type": "UPDATE",
+        "message": "[CPLR WEBSITE EXCEL FOR PUBLISHI] Tablo boyutu değişti! (Eski: (644, 10), Yeni: (656, 10))<br>[CPLR WEBSITE EXCEL FOR PUBLISHI] 12 adet yeni satır eklendi."
     }
 ]
