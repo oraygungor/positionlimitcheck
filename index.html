@@ -1,119 +1,271 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Position Limits AI Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f4f6f9; }
-        .header { background: linear-gradient(135deg, #1e3c72, #2a5298); color: white; padding: 2.5rem 0; margin-bottom: 2rem; }
-        .card { border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; border-radius: 10px;}
-        .nav-tabs .nav-link { color: #555; font-weight: 600; border: none; }
-        .nav-tabs .nav-link.active { color: #0d6efd; border-bottom: 3px solid #0d6efd; background: transparent; }
-        .table-wrapper { max-height: 600px; overflow: auto; font-size: 0.85rem; }
-        .badge-eu { background-color: #0d6efd; }
-        .badge-uk { background-color: #dc3545; }
+        /* CSS Variables for Theme Management */
+        :root {
+            --bg-body: #f4f7f6;
+            --bg-card: #ffffff;
+            --text-main: #2b2b2b;
+            --text-muted: #6c757d;
+            --border-color: #e9ecef;
+            --header-bg: linear-gradient(135deg, #1e3c72, #2a5298);
+            --header-text: #ffffff;
+            --accordion-bg: #ffffff;
+            --accordion-hover: #f8f9fa;
+            --accordion-active-bg: #eef2f7;
+            --accordion-active-text: #1e3c72;
+            --badge-eu: #0d6efd;
+            --badge-uk: #dc3545;
+            --code-bg: #f8f9fa;
+        }
+
+        [data-theme="dark"] {
+            --bg-body: #121212;
+            --bg-card: #1e1e1e;
+            --text-main: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --border-color: #333333;
+            --header-bg: linear-gradient(135deg, #0a192f, #112240);
+            --header-text: #e6f1ff;
+            --accordion-bg: #1e1e1e;
+            --accordion-hover: #252525;
+            --accordion-active-bg: #2a3b5c;
+            --accordion-active-text: #64ffda;
+            --code-bg: #2b2b2b;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-body); 
+            color: var(--text-main);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Header Styles */
+        .header { 
+            background: var(--header-bg); 
+            color: var(--header-text); 
+            padding: 3rem 0; 
+            margin-bottom: 2rem; 
+            position: relative;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
         
-        /* AI Rapor formatı için stiller */
-        .ai-report-content { font-size: 0.95rem; line-height: 1.6; color: #333; }
-        .ai-report-content h1, .ai-report-content h2, .ai-report-content h3 { font-size: 1.1rem; font-weight: 600; color: #1e3c72; margin-top: 1rem; border-bottom: 1px solid #ddd; padding-bottom: 0.3rem;}
-        .ai-report-content ul { padding-left: 20px; margin-bottom: 1rem; }
-        .ai-report-content strong { color: #000; }
-        .accordion-button:not(.collapsed) { background-color: #e9ecef; color: #1e3c72; font-weight: 600; }
-        .log-date { font-size: 0.9rem; color: #6c757d; }
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+        .theme-toggle:hover { background: rgba(255, 255, 255, 0.2); }
+
+        /* Card & Layout */
+        .card { 
+            background-color: var(--bg-card); 
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.04); 
+            border-radius: 12px;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        /* Accordion Styles */
+        .accordion-item {
+            background-color: var(--accordion-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px !important;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+        .accordion-item:hover {
+            border-color: var(--accordion-active-text);
+        }
+        .accordion-button {
+            background-color: var(--accordion-bg);
+            color: var(--text-main);
+            transition: background-color 0.3s ease;
+        }
+        .accordion-button:not(.collapsed) { 
+            background-color: var(--accordion-active-bg); 
+            color: var(--accordion-active-text); 
+            font-weight: 600; 
+            box-shadow: inset 0 -1px 0 rgba(0,0,0,.125);
+        }
+        .accordion-button::after {
+            filter: var(--theme-icon-filter, none);
+        }
+        [data-theme="dark"] .accordion-button::after {
+            filter: invert(1);
+        }
+        
+        /* Badges & Text */
+        .badge-eu { background-color: var(--badge-eu); }
+        .badge-uk { background-color: var(--badge-uk); color: white; }
+        .log-date { font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; gap: 5px;}
+
+        /* Markdown Report Styling */
+        .ai-report-content { 
+            font-size: 0.95rem; 
+            line-height: 1.7; 
+            color: var(--text-main); 
+            padding: 1.5rem;
+        }
+        .ai-report-content h1, .ai-report-content h2, .ai-report-content h3 { 
+            font-size: 1.15rem; 
+            font-weight: 600; 
+            color: var(--accordion-active-text); 
+            margin-top: 1.5rem; 
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color); 
+            padding-bottom: 0.5rem;
+        }
+        .ai-report-content h1:first-child, .ai-report-content h2:first-child { margin-top: 0; }
+        .ai-report-content ul { padding-left: 1.5rem; margin-bottom: 1.5rem; }
+        .ai-report-content li { margin-bottom: 0.5rem; }
+        .ai-report-content strong { color: var(--text-main); font-weight: 600; }
+        .ai-report-content code {
+            background-color: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #d63384;
+        }
+
+        /* Loading Spinner */
+        .spinner-border { color: var(--accordion-active-text); }
     </style>
 </head>
 <body>
 
-<div class="header text-center shadow-sm">
-    <h1>🌍 Global Position Limits AI Monitor</h1>
-    <p class="mb-0">Yapay Zeka Destekli Değişiklik Raporlama (EU & UK)</p>
+<div class="header text-center">
+    <button class="theme-toggle" id="themeToggleBtn">
+        <i class="fa-solid fa-moon" id="themeIcon"></i>
+        <span id="themeText">Dark Mode</span>
+    </button>
+    <h1 class="fw-bold"><i class="fa-solid fa-earth-americas me-2"></i>Global Position Limits Monitor</h1>
+    <p class="mb-0 text-white-50 mt-2">AI-Powered Regulatory Change Tracking (EU & UK)</p>
 </div>
 
-<div class="container-fluid px-4 px-md-5">
-    
-    <div class="row mb-4">
+<div class="container-fluid px-4 px-md-5" style="max-width: 1400px;">
+    <div class="row mb-5">
         <div class="col-12">
-            <div class="card p-4">
-                <h5 class="mb-4">🤖 AI Analiz Raporları Geçmişi</h5>
+            <div class="card p-4 p-md-5">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="fw-bold m-0"><i class="fa-solid fa-robot me-2 text-primary"></i>AI Analysis History</h4>
+                    <span class="badge bg-secondary rounded-pill px-3 py-2" id="reportCount">0 records</span>
+                </div>
                 
                 <div class="accordion" id="logAccordion">
-                    <p class="text-center text-muted" id="loadingLog">Veriler yükleniyor...</p>
-                </div>
-                
-            </div>
-        </div>
-    </div>
-
-    <div class="card p-4">
-        <h5 class="mb-4">📊 Güncel Excel Verileri</h5>
-        <ul class="nav nav-tabs mb-3" id="myTab" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="eu-tab" data-bs-toggle="tab" data-bs-target="#eu-pane" type="button">🇪🇺 EU Limits</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="uk-tab" data-bs-toggle="tab" data-bs-target="#uk-pane" type="button">🇬🇧 UK Limits</button>
-            </li>
-        </ul>
-
-        <div class="tab-content" id="myTabContent">
-            <div class="tab-pane fade show active" id="eu-pane" role="tabpanel">
-                <div class="table-wrapper" id="eu-table-container">
-                    <p class="text-center text-muted mt-3">Veri yükleniyor...</p>
-                </div>
-            </div>
-            <div class="tab-pane fade" id="uk-pane" role="tabpanel">
-                <div class="table-wrapper" id="uk-table-container">
-                    <p class="text-center text-muted mt-3">Veri yükleniyor...</p>
+                    <div class="text-center py-5" id="loadingState">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="text-muted mt-3">Fetching latest AI insights...</p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // 1. JSON LOG YÜKLEME VE AI METNİNİ PARSE ETME
+    // --- Theme Management ---
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    const themeIcon = document.getElementById('themeIcon');
+    const themeText = document.getElementById('themeText');
+    
+    // Check local storage for theme preference
+    const currentTheme = localStorage.getItem('appTheme') || 'light';
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    updateThemeUI(currentTheme);
+
+    themeToggleBtn.addEventListener('click', () => {
+        let theme = document.documentElement.getAttribute('data-theme');
+        let newTheme = theme === 'dark' ? 'light' : 'dark';
+        
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('appTheme', newTheme);
+        updateThemeUI(newTheme);
+    });
+
+    function updateThemeUI(theme) {
+        if (theme === 'dark') {
+            themeIcon.className = 'fa-solid fa-sun';
+            themeText.innerText = 'Light Mode';
+        } else {
+            themeIcon.className = 'fa-solid fa-moon';
+            themeText.innerText = 'Dark Mode';
+        }
+    }
+
+    // --- Data Fetching and Parsing ---
     fetch('report_list.json')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
         .then(data => {
             const accordion = document.getElementById('logAccordion');
-            document.getElementById('loadingLog').style.display = 'none';
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('reportCount').innerText = `${data.length} records`;
             
-            // Listeyi ters çevir (en yeni en üstte)
+            if(data.length === 0) {
+                accordion.innerHTML = `<div class="text-center py-4 text-muted"><i class="fa-solid fa-inbox fs-1 mb-3"></i><p>No tracking history found yet.</p></div>`;
+                return;
+            }
+
+            // Reverse to show newest first
             data.reverse().forEach((item, index) => {
                 const badgeClass = item.region === 'EU' ? 'badge-eu' : 'badge-uk';
                 
-                // ai_summary varsa markdown olarak parse et, yoksa normal message'ı göster
-                let rawContent = item.ai_summary ? item.ai_summary : (item.message || "Açıklama bulunamadı.");
+                // Parse AI summary with Marked.js, fallback to basic message
+                let rawContent = item.ai_summary ? item.ai_summary : (item.message || "No details provided.");
                 let parsedHtmlContent = marked.parse(rawContent);
 
-                const titleType = item.type === 'INIT' ? 'Sistem Başlatıldı' : 'AI Değişiklik Özeti';
+                const titleType = item.type === 'INIT' ? 'System Initialized' : 'Position Limits Update Detected';
+                const iconType = item.type === 'INIT' ? 'fa-play' : 'fa-code-compare';
+                
+                // First item is open by default
                 const isExpanded = index === 0 ? 'true' : 'false';
                 const showClass = index === 0 ? 'show' : '';
                 const collapsedClass = index !== 0 ? 'collapsed' : '';
 
                 const accordionItem = `
-                    <div class="accordion-item mb-3 border shadow-sm" style="border-radius: 8px; overflow: hidden;">
+                    <div class="accordion-item">
                         <h2 class="accordion-header" id="heading${index}">
                             <button class="accordion-button ${collapsedClass}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${index}" aria-expanded="${isExpanded}" aria-controls="collapse${index}">
                                 <div class="d-flex w-100 justify-content-between align-items-center me-3">
-                                    <div>
-                                        <span class="badge ${badgeClass} me-2">${item.region}</span>
-                                        <strong>${titleType}</strong>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="badge ${badgeClass} fs-6 px-3 py-2">${item.region}</span>
+                                        <strong class="fs-6"><i class="fa-solid ${iconType} me-2 text-muted"></i>${titleType}</strong>
                                     </div>
-                                    <span class="log-date">${item.date}</span>
+                                    <span class="log-date"><i class="fa-regular fa-clock"></i> ${item.date}</span>
                                 </div>
                             </button>
                         </h2>
                         <div id="collapse${index}" class="accordion-collapse collapse ${showClass}" aria-labelledby="heading${index}" data-bs-parent="#logAccordion">
-                            <div class="accordion-body ai-report-content bg-white">
+                            <div class="accordion-body ai-report-content">
                                 ${parsedHtmlContent}
                             </div>
                         </div>
@@ -123,36 +275,14 @@
             });
         })
         .catch(err => {
-            document.getElementById('loadingLog').innerHTML = '<span class="text-danger">Log dosyası (report_list.json) bulunamadı. Lütfen Python scriptinin çalıştığından emin olun.</span>';
+            console.error("Fetch error:", err);
+            document.getElementById('loadingState').innerHTML = `
+                <div class="text-danger py-4">
+                    <i class="fa-solid fa-triangle-exclamation fs-1 mb-3"></i>
+                    <p>Could not load <strong>report_list.json</strong>.</p>
+                    <small class="text-muted">Ensure the Python script has successfully run and generated the file.</small>
+                </div>`;
         });
-
-    // 2. EXCEL DOSYALARINI OKUMA FONKSİYONU
-    async function loadExcel(url, containerId) {
-        try {
-            const response = await fetch(url);
-            const arrayBuffer = await response.arrayBuffer();
-            const workbook = XLSX.read(arrayBuffer, {type: 'array'});
-            
-            const firstSheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[firstSheetName];
-            
-            const htmlTable = XLSX.utils.sheet_to_html(worksheet, { id: "table-" + containerId });
-            
-            const container = document.getElementById(containerId);
-            container.innerHTML = htmlTable;
-            
-            const table = container.querySelector('table');
-            if(table) {
-                table.classList.add('table', 'table-bordered', 'table-striped', 'table-hover', 'table-sm');
-            }
-        } catch (error) {
-            document.getElementById(containerId).innerHTML = `<p class="text-danger">Dosya yüklenemedi: ${url}</p>`;
-        }
-    }
-
-    loadExcel('positionlimit-previous-EU.xlsx', 'eu-table-container');
-    loadExcel('positionlimit-previous-UK.xlsx', 'uk-table-container');
-
 </script>
 
 </body>
