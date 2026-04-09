@@ -3,54 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Position Limits Dashboard</title>
+    <title>Position Limits AI Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f4f6f9; }
-        .header { background: linear-gradient(135deg, #2c3e50, #4ca1af); color: white; padding: 2rem 0; margin-bottom: 2rem; }
-        .card { border: none; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .header { background: linear-gradient(135deg, #1e3c72, #2a5298); color: white; padding: 2.5rem 0; margin-bottom: 2rem; }
+        .card { border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; border-radius: 10px;}
         .nav-tabs .nav-link { color: #555; font-weight: 600; border: none; }
         .nav-tabs .nav-link.active { color: #0d6efd; border-bottom: 3px solid #0d6efd; background: transparent; }
         .table-wrapper { max-height: 600px; overflow: auto; font-size: 0.85rem; }
         .badge-eu { background-color: #0d6efd; }
         .badge-uk { background-color: #dc3545; }
+        
+        /* AI Rapor formatı için stiller */
+        .ai-report-content { font-size: 0.95rem; line-height: 1.6; color: #333; }
+        .ai-report-content h1, .ai-report-content h2, .ai-report-content h3 { font-size: 1.1rem; font-weight: 600; color: #1e3c72; margin-top: 1rem; border-bottom: 1px solid #ddd; padding-bottom: 0.3rem;}
+        .ai-report-content ul { padding-left: 20px; margin-bottom: 1rem; }
+        .ai-report-content strong { color: #000; }
+        .accordion-button:not(.collapsed) { background-color: #e9ecef; color: #1e3c72; font-weight: 600; }
+        .log-date { font-size: 0.9rem; color: #6c757d; }
     </style>
 </head>
 <body>
 
-<div class="header text-center">
-    <h1>🌍 Global Position Limits Monitor</h1>
-    <p>Otomatik Takip Sistemi (EU & UK)</p>
+<div class="header text-center shadow-sm">
+    <h1>🌍 Global Position Limits AI Monitor</h1>
+    <p class="mb-0">Yapay Zeka Destekli Değişiklik Raporlama (EU & UK)</p>
 </div>
 
-<div class="container-fluid px-5">
+<div class="container-fluid px-4 px-md-5">
     
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card p-3">
-                <h5 class="mb-3">🔔 Son Güncelleme Kayıtları (Log)</h5>
-                <div style="max-height: 200px; overflow-y: auto;">
-                    <table class="table table-sm table-bordered table-striped" id="logTable">
-                        <thead class="table-light">
-                            <tr>
-                                <th style="width: 180px;">Tarih</th>
-                                <th style="width: 100px;">Bölge</th>
-                                <th>Mesaj</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td colspan="3" class="text-center text-muted">Yükleniyor...</td></tr>
-                        </tbody>
-                    </table>
+            <div class="card p-4">
+                <h5 class="mb-4">🤖 AI Analiz Raporları Geçmişi</h5>
+                
+                <div class="accordion" id="logAccordion">
+                    <p class="text-center text-muted" id="loadingLog">Veriler yükleniyor...</p>
                 </div>
+                
             </div>
         </div>
     </div>
 
-    <div class="card p-3">
+    <div class="card p-4">
+        <h5 class="mb-4">📊 Güncel Excel Verileri</h5>
         <ul class="nav nav-tabs mb-3" id="myTab" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="eu-tab" data-bs-toggle="tab" data-bs-target="#eu-pane" type="button">🇪🇺 EU Limits</button>
@@ -78,27 +79,51 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // 1. JSON LOG YÜKLEME
+    // 1. JSON LOG YÜKLEME VE AI METNİNİ PARSE ETME
     fetch('report_list.json')
         .then(response => response.json())
         .then(data => {
-            const tbody = document.querySelector('#logTable tbody');
-            tbody.innerHTML = '';
+            const accordion = document.getElementById('logAccordion');
+            document.getElementById('loadingLog').style.display = 'none';
+            
             // Listeyi ters çevir (en yeni en üstte)
-            data.reverse().forEach(item => {
+            data.reverse().forEach((item, index) => {
                 const badgeClass = item.region === 'EU' ? 'badge-eu' : 'badge-uk';
-                const row = `
-                    <tr>
-                        <td>${item.date}</td>
-                        <td><span class="badge ${badgeClass}">${item.region}</span></td>
-                        <td>${item.message}</td>
-                    </tr>
+                
+                // ai_summary varsa markdown olarak parse et, yoksa normal message'ı göster
+                let rawContent = item.ai_summary ? item.ai_summary : (item.message || "Açıklama bulunamadı.");
+                let parsedHtmlContent = marked.parse(rawContent);
+
+                const titleType = item.type === 'INIT' ? 'Sistem Başlatıldı' : 'AI Değişiklik Özeti';
+                const isExpanded = index === 0 ? 'true' : 'false';
+                const showClass = index === 0 ? 'show' : '';
+                const collapsedClass = index !== 0 ? 'collapsed' : '';
+
+                const accordionItem = `
+                    <div class="accordion-item mb-3 border shadow-sm" style="border-radius: 8px; overflow: hidden;">
+                        <h2 class="accordion-header" id="heading${index}">
+                            <button class="accordion-button ${collapsedClass}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${index}" aria-expanded="${isExpanded}" aria-controls="collapse${index}">
+                                <div class="d-flex w-100 justify-content-between align-items-center me-3">
+                                    <div>
+                                        <span class="badge ${badgeClass} me-2">${item.region}</span>
+                                        <strong>${titleType}</strong>
+                                    </div>
+                                    <span class="log-date">${item.date}</span>
+                                </div>
+                            </button>
+                        </h2>
+                        <div id="collapse${index}" class="accordion-collapse collapse ${showClass}" aria-labelledby="heading${index}" data-bs-parent="#logAccordion">
+                            <div class="accordion-body ai-report-content bg-white">
+                                ${parsedHtmlContent}
+                            </div>
+                        </div>
+                    </div>
                 `;
-                tbody.innerHTML += row;
+                accordion.innerHTML += accordionItem;
             });
         })
         .catch(err => {
-            document.querySelector('#logTable tbody').innerHTML = '<tr><td colspan="3" class="text-danger">Log dosyası (report_list.json) bulunamadı.</td></tr>';
+            document.getElementById('loadingLog').innerHTML = '<span class="text-danger">Log dosyası (report_list.json) bulunamadı. Lütfen Python scriptinin çalıştığından emin olun.</span>';
         });
 
     // 2. EXCEL DOSYALARINI OKUMA FONKSİYONU
@@ -108,29 +133,23 @@
             const arrayBuffer = await response.arrayBuffer();
             const workbook = XLSX.read(arrayBuffer, {type: 'array'});
             
-            // İlk sayfayı al
             const firstSheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[firstSheetName];
             
-            // HTML'e çevir (Bootstrap class'ları ekle)
             const htmlTable = XLSX.utils.sheet_to_html(worksheet, { id: "table-" + containerId });
             
             const container = document.getElementById(containerId);
             container.innerHTML = htmlTable;
             
-            // Oluşan tabloya stil ver
             const table = container.querySelector('table');
             if(table) {
-                table.classList.add('table', 'table-striped', 'table-hover', 'table-sm');
-                // İlk satırı header yap (SheetJS bazen yapmaz)
-                // Basitlik için olduğu gibi bırakıyoruz, görsel olarak yeterli olacaktır.
+                table.classList.add('table', 'table-bordered', 'table-striped', 'table-hover', 'table-sm');
             }
         } catch (error) {
-            document.getElementById(containerId).innerHTML = `<p class="text-danger">Dosya yüklenemedi: ${url} (Python scripti çalıştırıldı mı?)</p>`;
+            document.getElementById(containerId).innerHTML = `<p class="text-danger">Dosya yüklenemedi: ${url}</p>`;
         }
     }
 
-    // Sayfa açılınca Excel'leri çek
     loadExcel('positionlimit-previous-EU.xlsx', 'eu-table-container');
     loadExcel('positionlimit-previous-UK.xlsx', 'uk-table-container');
 
