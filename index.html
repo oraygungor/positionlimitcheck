@@ -1,289 +1,296 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" class="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Position Limits AI Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Position Limits AI Monitor</title>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Marked.js for parsing Markdown -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
+    <!-- Tailwind CSS with Typography Plugin for beautiful Markdown rendering -->
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            900: '#134e4a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
-        /* CSS Variables for Theme Management */
-        :root {
-            --bg-body: #f4f7f6;
-            --bg-card: #ffffff;
-            --text-main: #2b2b2b;
-            --text-muted: #6c757d;
-            --border-color: #e9ecef;
-            --header-bg: linear-gradient(135deg, #1e3c72, #2a5298);
-            --header-text: #ffffff;
-            --accordion-bg: #ffffff;
-            --accordion-hover: #f8f9fa;
-            --accordion-active-bg: #eef2f7;
-            --accordion-active-text: #1e3c72;
-            --badge-eu: #0d6efd;
-            --badge-uk: #dc3545;
-            --code-bg: #f8f9fa;
-        }
-
-        [data-theme="dark"] {
-            --bg-body: #121212;
-            --bg-card: #1e1e1e;
-            --text-main: #e0e0e0;
-            --text-muted: #a0a0a0;
-            --border-color: #333333;
-            --header-bg: linear-gradient(135deg, #0a192f, #112240);
-            --header-text: #e6f1ff;
-            --accordion-bg: #1e1e1e;
-            --accordion-hover: #252525;
-            --accordion-active-bg: #2a3b5c;
-            --accordion-active-text: #64ffda;
-            --code-bg: #2b2b2b;
-        }
-
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: var(--bg-body); 
-            color: var(--text-main);
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-
-        /* Header Styles */
-        .header { 
-            background: var(--header-bg); 
-            color: var(--header-text); 
-            padding: 3rem 0; 
-            margin-bottom: 2rem; 
-            position: relative;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
+        /* Smooth transitions for theme toggle */
+        body { transition: background-color 0.3s ease, color 0.3s ease; }
+        .card-transition { transition: all 0.3s ease; }
+        .card-transition:hover { transform: translateY(-2px); }
         
-        .theme-toggle {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 30px;
-            cursor: pointer;
-            backdrop-filter: blur(5px);
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.9rem;
-        }
-        .theme-toggle:hover { background: rgba(255, 255, 255, 0.2); }
-
-        /* Card & Layout */
-        .card { 
-            background-color: var(--bg-card); 
-            border: 1px solid var(--border-color);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.04); 
-            border-radius: 12px;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
-        }
-
-        /* Accordion Styles */
-        .accordion-item {
-            background-color: var(--accordion-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 8px !important;
-            margin-bottom: 1rem;
-            overflow: hidden;
-            transition: all 0.2s ease;
-        }
-        .accordion-item:hover {
-            border-color: var(--accordion-active-text);
-        }
-        .accordion-button {
-            background-color: var(--accordion-bg);
-            color: var(--text-main);
-            transition: background-color 0.3s ease;
-        }
-        .accordion-button:not(.collapsed) { 
-            background-color: var(--accordion-active-bg); 
-            color: var(--accordion-active-text); 
-            font-weight: 600; 
-            box-shadow: inset 0 -1px 0 rgba(0,0,0,.125);
-        }
-        .accordion-button::after {
-            filter: var(--theme-icon-filter, none);
-        }
-        [data-theme="dark"] .accordion-button::after {
-            filter: invert(1);
-        }
+        /* Custom scrollbar for modern feel */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
         
-        /* Badges & Text */
-        .badge-eu { background-color: var(--badge-eu); }
-        .badge-uk { background-color: var(--badge-uk); color: white; }
-        .log-date { font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; gap: 5px;}
-
-        /* Markdown Report Styling */
-        .ai-report-content { 
-            font-size: 0.95rem; 
-            line-height: 1.7; 
-            color: var(--text-main); 
-            padding: 1.5rem;
-        }
-        .ai-report-content h1, .ai-report-content h2, .ai-report-content h3 { 
-            font-size: 1.15rem; 
-            font-weight: 600; 
-            color: var(--accordion-active-text); 
-            margin-top: 1.5rem; 
-            margin-bottom: 1rem;
-            border-bottom: 1px solid var(--border-color); 
-            padding-bottom: 0.5rem;
-        }
-        .ai-report-content h1:first-child, .ai-report-content h2:first-child { margin-top: 0; }
-        .ai-report-content ul { padding-left: 1.5rem; margin-bottom: 1.5rem; }
-        .ai-report-content li { margin-bottom: 0.5rem; }
-        .ai-report-content strong { color: var(--text-main); font-weight: 600; }
-        .ai-report-content code {
-            background-color: var(--code-bg);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.9em;
-            color: #d63384;
-        }
-
-        /* Loading Spinner */
-        .spinner-border { color: var(--accordion-active-text); }
+        /* Hide element utility */
+        .hidden-content { display: none; }
     </style>
 </head>
-<body>
+<body class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex flex-col font-sans">
 
-<div class="header text-center">
-    <button class="theme-toggle" id="themeToggleBtn">
-        <i class="fa-solid fa-moon" id="themeIcon"></i>
-        <span id="themeText">Dark Mode</span>
-    </button>
-    <h1 class="fw-bold"><i class="fa-solid fa-earth-americas me-2"></i>Global Position Limits Monitor</h1>
-    <p class="mb-0 text-white-50 mt-2">AI-Powered Regulatory Change Tracking (EU & UK)</p>
-</div>
-
-<div class="container-fluid px-4 px-md-5" style="max-width: 1400px;">
-    <div class="row mb-5">
-        <div class="col-12">
-            <div class="card p-4 p-md-5">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h4 class="fw-bold m-0"><i class="fa-solid fa-robot me-2 text-primary"></i>AI Analysis History</h4>
-                    <span class="badge bg-secondary rounded-pill px-3 py-2" id="reportCount">0 records</span>
-                </div>
-                
-                <div class="accordion" id="logAccordion">
-                    <div class="text-center py-5" id="loadingState">
-                        <div class="spinner-border" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                        <p class="text-muted mt-3">Fetching latest AI insights...</p>
+    <!-- Top Navigation Bar -->
+    <nav class="sticky top-0 z-50 backdrop-blur-md bg-white/80 dark:bg-gray-800/80 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-3">
+                    <div class="bg-brand-500 text-white p-2 rounded-lg shadow-sm">
+                        <i class="fa-solid fa-chart-line text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-xl tracking-tight leading-none text-gray-900 dark:text-white">Limit Monitor</h1>
+                        <span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">AI Analysis Engine</span>
                     </div>
                 </div>
+                
+                <!-- Theme Toggle Button -->
+                <button id="themeToggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    <i id="themeIcon" class="fa-solid fa-moon text-gray-600 dark:text-gray-300 text-lg"></i>
+                </button>
             </div>
         </div>
-    </div>
-</div>
+    </nav>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    // --- Theme Management ---
-    const themeToggleBtn = document.getElementById('themeToggleBtn');
-    const themeIcon = document.getElementById('themeIcon');
-    const themeText = document.getElementById('themeText');
-    
-    // Check local storage for theme preference
-    const currentTheme = localStorage.getItem('appTheme') || 'light';
-    document.documentElement.setAttribute('data-theme', currentTheme);
-    updateThemeUI(currentTheme);
-
-    themeToggleBtn.addEventListener('click', () => {
-        let theme = document.documentElement.getAttribute('data-theme');
-        let newTheme = theme === 'dark' ? 'light' : 'dark';
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         
-        document.documentElement.setAttribute('data-theme', newTheme);
-        localStorage.setItem('appTheme', newTheme);
-        updateThemeUI(newTheme);
-    });
+        <!-- Dashboard Header -->
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Overview</h2>
+            <p class="text-gray-600 dark:text-gray-400 mt-1">Automated tracking of ESMA and FCA position limit modifications.</p>
+        </div>
 
-    function updateThemeUI(theme) {
-        if (theme === 'dark') {
-            themeIcon.className = 'fa-solid fa-sun';
-            themeText.innerText = 'Light Mode';
-        } else {
-            themeIcon.className = 'fa-solid fa-moon';
-            themeText.innerText = 'Dark Mode';
-        }
-    }
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-10" id="statsContainer">
+            <!-- Populated by JS -->
+        </div>
 
-    // --- Data Fetching and Parsing ---
-    fetch('report_list.json')
-        .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok');
-            return response.json();
-        })
-        .then(data => {
-            const accordion = document.getElementById('logAccordion');
-            document.getElementById('loadingState').style.display = 'none';
-            document.getElementById('reportCount').innerText = `${data.length} records`;
-            
-            if(data.length === 0) {
-                accordion.innerHTML = `<div class="text-center py-4 text-muted"><i class="fa-solid fa-inbox fs-1 mb-3"></i><p>No tracking history found yet.</p></div>`;
-                return;
+        <!-- Activity Feed Header -->
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Intelligence Reports</h3>
+            <span class="text-sm font-medium px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-full text-gray-700 dark:text-gray-300" id="reportCountBadge">Loading...</span>
+        </div>
+
+        <!-- Reports Feed -->
+        <div id="feedContainer" class="space-y-6">
+            <!-- Loading State -->
+            <div id="loadingState" class="flex flex-col items-center justify-center py-20 text-gray-500 dark:text-gray-400">
+                <i class="fa-solid fa-circle-notch fa-spin text-4xl text-brand-500 mb-4"></i>
+                <p class="font-medium">Fetching the latest AI insights...</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+            &copy; <span id="currentYear"></span> Global Position Limits Monitor. Powered by OpenAI.
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        // --- Theme Management ---
+        const htmlElement = document.documentElement;
+        const themeToggleBtn = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        
+        // Load preference from local storage or default to light
+        let currentTheme = localStorage.getItem('appTheme') || 'light';
+        applyTheme(currentTheme);
+
+        themeToggleBtn.addEventListener('click', () => {
+            currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            applyTheme(currentTheme);
+            localStorage.setItem('appTheme', currentTheme);
+        });
+
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                htmlElement.classList.add('dark');
+                htmlElement.classList.remove('light');
+                themeIcon.className = 'fa-solid fa-sun text-yellow-400 text-lg';
+            } else {
+                htmlElement.classList.add('light');
+                htmlElement.classList.remove('dark');
+                themeIcon.className = 'fa-solid fa-moon text-gray-600 text-lg';
             }
+        }
 
-            // Reverse to show newest first
-            data.reverse().forEach((item, index) => {
-                const badgeClass = item.region === 'EU' ? 'badge-eu' : 'badge-uk';
+        // --- Data Fetching and UI Rendering ---
+        fetch('report_list.json')
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to load local JSON.');
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('loadingState').style.display = 'none';
                 
-                // Parse AI summary with Marked.js, fallback to basic message
-                let rawContent = item.ai_summary ? item.ai_summary : (item.message || "No details provided.");
-                let parsedHtmlContent = marked.parse(rawContent);
+                if(!data || data.length === 0) {
+                    renderEmptyState();
+                    return;
+                }
 
-                const titleType = item.type === 'INIT' ? 'System Initialized' : 'Position Limits Update Detected';
-                const iconType = item.type === 'INIT' ? 'fa-play' : 'fa-code-compare';
+                updateStats(data);
+                renderFeed(data.reverse()); // Show newest first
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                renderErrorState();
+            });
+
+        // --- Core Functions ---
+        function updateStats(data) {
+            const total = data.length;
+            const euCount = data.filter(d => d.region === 'EU').length;
+            const ukCount = data.filter(d => d.region === 'UK').length;
+            const latestDate = data.length > 0 ? data[data.length - 1].date.split(' ')[0] : 'N/A'; // Since we haven't reversed it yet, the last item is the newest
+
+            const statsHtml = `
+                ${createStatCard('Total Scans', total, 'fa-magnifying-glass-chart', 'text-blue-500')}
+                ${createStatCard('UK Updates', ukCount, 'fa-flag', 'text-red-500')}
+                ${createStatCard('EU Updates', euCount, 'fa-euro-sign', 'text-indigo-500')}
+                ${createStatCard('Last Update', latestDate, 'fa-calendar-check', 'text-brand-500')}
+            `;
+            document.getElementById('statsContainer').innerHTML = statsHtml;
+            document.getElementById('reportCountBadge').textContent = `${total} Total Records`;
+        }
+
+        function createStatCard(title, value, icon, iconColorClass) {
+            return `
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-4 card-transition">
+                    <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                        <i class="fa-solid ${icon} text-xl ${iconColorClass}"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">${title}</p>
+                        <h4 class="text-2xl font-bold text-gray-900 dark:text-white">${value}</h4>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderFeed(data) {
+            const container = document.getElementById('feedContainer');
+            let feedHtml = '';
+
+            data.forEach((item, index) => {
+                const isEU = item.region === 'EU';
+                const regionColor = isEU ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800';
                 
-                // First item is open by default
-                const isExpanded = index === 0 ? 'true' : 'false';
-                const showClass = index === 0 ? 'show' : '';
-                const collapsedClass = index !== 0 ? 'collapsed' : '';
+                const isInit = item.type === 'INIT';
+                const eventIcon = isInit ? 'fa-rocket text-green-500' : 'fa-robot text-brand-500';
+                const eventTitle = isInit ? 'System Initialized & Baseline Captured' : 'AI Modification Analysis Generated';
+                
+                let rawContent = item.ai_summary ? item.ai_summary : (item.message || "No specific details provided.");
+                let htmlContent = marked.parse(rawContent);
 
-                const accordionItem = `
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="heading${index}">
-                            <button class="accordion-button ${collapsedClass}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${index}" aria-expanded="${isExpanded}" aria-controls="collapse${index}">
-                                <div class="d-flex w-100 justify-content-between align-items-center me-3">
-                                    <div class="d-flex align-items-center gap-3">
-                                        <span class="badge ${badgeClass} fs-6 px-3 py-2">${item.region}</span>
-                                        <strong class="fs-6"><i class="fa-solid ${iconType} me-2 text-muted"></i>${titleType}</strong>
-                                    </div>
-                                    <span class="log-date"><i class="fa-regular fa-clock"></i> ${item.date}</span>
+                // Initial open state for the first item
+                const isOpen = index === 0;
+
+                feedHtml += `
+                    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden card-transition">
+                        <!-- Header / Toggle Button -->
+                        <button onclick="toggleCard('content-${index}', 'icon-${index}')" class="w-full text-left px-6 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-750 focus:outline-none transition-colors">
+                            <div class="flex items-center gap-4">
+                                <div class="flex-shrink-0">
+                                    <i class="fa-solid ${eventIcon} text-xl bg-gray-50 dark:bg-gray-900 p-2 rounded-full border border-gray-100 dark:border-gray-700"></i>
                                 </div>
-                            </button>
-                        </h2>
-                        <div id="collapse${index}" class="accordion-collapse collapse ${showClass}" aria-labelledby="heading${index}" data-bs-parent="#logAccordion">
-                            <div class="accordion-body ai-report-content">
-                                ${parsedHtmlContent}
+                                <div>
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="text-xs font-bold uppercase px-2 py-0.5 rounded-md border ${regionColor}">${item.region} Limits</span>
+                                        <span class="text-xs text-gray-500 dark:text-gray-400"><i class="fa-regular fa-clock mr-1"></i>${item.date}</span>
+                                    </div>
+                                    <h4 class="font-semibold text-gray-900 dark:text-white text-base">${eventTitle}</h4>
+                                </div>
+                            </div>
+                            <div class="text-gray-400 dark:text-gray-500">
+                                <i id="icon-${index}" class="fa-solid fa-chevron-${isOpen ? 'up' : 'down'} transition-transform"></i>
+                            </div>
+                        </button>
+                        
+                        <!-- Collapsible Content -->
+                        <div id="content-${index}" class="${isOpen ? '' : 'hidden-content'} border-t border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
+                            <div class="p-6">
+                                <!-- The 'prose' class is the magic that styles the Markdown. 'dark:prose-invert' fixes the dark mode colors automatically -->
+                                <div class="prose prose-sm sm:prose-base dark:prose-invert max-w-none prose-a:text-brand-500 prose-headings:text-gray-800 dark:prose-headings:text-gray-100">
+                                    ${htmlContent}
+                                </div>
                             </div>
                         </div>
                     </div>
                 `;
-                accordion.innerHTML += accordionItem;
             });
-        })
-        .catch(err => {
-            console.error("Fetch error:", err);
-            document.getElementById('loadingState').innerHTML = `
-                <div class="text-danger py-4">
-                    <i class="fa-solid fa-triangle-exclamation fs-1 mb-3"></i>
-                    <p>Could not load <strong>report_list.json</strong>.</p>
-                    <small class="text-muted">Ensure the Python script has successfully run and generated the file.</small>
-                </div>`;
-        });
-</script>
 
+            container.innerHTML = feedHtml;
+        }
+
+        // JS logic to toggle accordion cards smoothly
+        function toggleCard(contentId, iconId) {
+            const content = document.getElementById(contentId);
+            const icon = document.getElementById(iconId);
+            
+            if (content.classList.contains('hidden-content')) {
+                content.classList.remove('hidden-content');
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            } else {
+                content.classList.add('hidden-content');
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+            }
+        }
+
+        function renderEmptyState() {
+            document.getElementById('feedContainer').innerHTML = `
+                <div class="bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 p-12 text-center">
+                    <i class="fa-solid fa-folder-open text-5xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">No Reports Found</h3>
+                    <p class="text-gray-500 dark:text-gray-400 mt-2">The system is monitoring, but no changes have been detected yet.</p>
+                </div>
+            `;
+        }
+
+        function renderErrorState() {
+            document.getElementById('feedContainer').innerHTML = `
+                <div class="bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800 p-8 text-center">
+                    <i class="fa-solid fa-triangle-exclamation text-4xl text-red-500 mb-4"></i>
+                    <h3 class="text-lg font-medium text-red-800 dark:text-red-400">Connection Error</h3>
+                    <p class="text-red-600 dark:text-red-300 mt-2">Could not load the <strong>report_list.json</strong> file. Please ensure the Python script is actively updating the repository.</p>
+                </div>
+            `;
+        }
+    </script>
 </body>
 </html>
