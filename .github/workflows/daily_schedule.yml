@@ -24,9 +24,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pandas openpyxl requests
+          pip install pandas openpyxl requests openai
 
       - name: Run comparison script
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python daily_check.py
 
       - name: Commit and Push changes
